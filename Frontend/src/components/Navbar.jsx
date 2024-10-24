@@ -32,4 +32,4 @@ function Navbar() {
   );
 }
 
-export default Navbar;
+export default Navbar; // Esto exporta el componente por defecto

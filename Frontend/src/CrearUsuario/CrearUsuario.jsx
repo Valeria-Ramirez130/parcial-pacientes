@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './CrearUsuario.css'; 
+import './CrearUsuario.css';
 import axios from 'axios';
 
 function CrearUsuario() {
@@ -10,8 +10,16 @@ function CrearUsuario() {
     const [email, setEmail] = useState('');
     const [ciudad, setCiudad] = useState('');
     const [contrasena, setContrasena] = useState('');
+    const [rol, setRol] = useState('usuario'); // Estado para el rol
+    const [loading, setLoading] = useState(false);
 
     const agregarUsuario = () => {
+        // Validar que todos los campos estén llenos
+        if (!nombre || !fechaNacimiento || !cedula || !celular || !email || !ciudad || !contrasena || !rol) {
+            alert('Todos los campos son obligatorios.');
+            return;
+        }
+
         const nuevoUsuario = {
             nombre,
             fechaNacimiento,
@@ -19,24 +27,32 @@ function CrearUsuario() {
             celular,
             email,
             ciudad,
-            contrasena
+            contrasena,
+            rol // Agregar el rol al objeto del usuario
         };
 
-        axios.post('http://localhost:5000/api/usuario/agregarusuario', nuevoUsuario)
-            .then(res => {
-                alert(res.data.message);
+        setLoading(true); // Comienza la carga
+        axios
+            .post(`${import.meta.env.VITE_BACK_URL}/api/usuario/nuevoUsuario`, nuevoUsuario)
+            .then((res) => {
+                // Mostrar mensaje mejorado
+                alert('Usuario creado correctamente');
                 // Restablecer los campos del formulario
-            setNombre('');
-            setFechaNacimiento('');
-            setCedula('');
-            setCelular('');
-            setEmail('');
-            setCiudad('');
-            setContrasena('');
+                setNombre('');
+                setFechaNacimiento('');
+                setCedula('');
+                setCelular('');
+                setEmail('');
+                setCiudad('');
+                setContrasena('');
+                setRol('usuario'); // Restablece el rol a 'usuario'
             })
-            .catch(err => {
+            .catch((err) => {
                 console.error('Error al agregar usuario:', err);
                 alert('Error al agregar usuario. Intenta nuevamente.');
+            })
+            .finally(() => {
+                setLoading(false); // Finaliza la carga
             });
     };
 
@@ -134,7 +150,7 @@ function CrearUsuario() {
                 </div>
 
                 <div className="row">
-                    <div className="col-12">
+                    <div className="col-6">
                         <div className='mb-3'>
                             <label htmlFor='contrasena' className='form-label'>Contraseña</label>
                             <input
@@ -149,8 +165,32 @@ function CrearUsuario() {
                     </div>
                 </div>
 
-                <button type="button" onClick={agregarUsuario} className='btn btn-success'>Guardar Usuario</button>
-                </form>
+                <div className="row">
+                    <div className="col-6">
+                        <div className='mb-3'>
+                            <label htmlFor='rol' className='form-label'>Rol</label>
+                            <select
+                                id='rol'
+                                className='form-control'
+                                value={rol}
+                                onChange={(e) => setRol(e.target.value)}
+                            >
+                                <option value="usuario">Usuario</option>
+                                <option value="administrador">Administrador</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={agregarUsuario}
+                    className='btn btn-success'
+                    disabled={loading} // Deshabilita el botón mientras se realiza la solicitud
+                >
+                    {loading ? 'Guardando...' : 'Guardar Usuario'}
+                </button>
+            </form>
         </div>
     );
 }
