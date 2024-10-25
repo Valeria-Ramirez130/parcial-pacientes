@@ -1,50 +1,59 @@
-// import React, { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Importa el hook useNavigate
+import axios from 'axios';
+import 'bootstrap/dist/css/bootstrap.min.css'; // Asegúrate de importar Bootstrap en tu archivo principal.
 
-// export function VistaUsuario() {
-//     const [codigo, setCodigo] = useState('');
-//     const [mensaje, setMensaje] = useState('');
+const VistaUsuario = () => {
+    const [codigo, setCodigo] = useState('');
+    const [mensaje, setMensaje] = useState('');
+    const navigate = useNavigate(); // Inicializa el hook useNavigate
 
-//     const handleConsultarCodigo = async (e) => {
-//         e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-//         try {
-//             const response = await fetch('http://localhost:5000/api/codigos/verificarCodigo', {
-//                 method: 'POST',
-//                 headers: {
-//                     'Content-Type': 'application/json',
-//                 },
-//                 body: JSON.stringify({ codigo }),
-//             });
+        try {
+            const response = await axios.post('/api/codigos/verificarCodigo', { codigo });
+            const { message } = response.data;
+            setMensaje(message);
+        } catch (error) {
+            if (error.response && error.response.data) {
+                setMensaje(error.response.data.error);
+            } else {
+                setMensaje('Error al verificar el código');
+            }
+        }
+    };
 
-//             const data = await response.json();
-//             if (response.ok) {
-//                 setMensaje(data.message); // Mostrar el mensaje del premio
-//             } else {
-//                 setMensaje(data.message); // Mensaje de error si el código no es válido
-//             }
-//         } catch (error) {
-//             console.error("Error al consultar el código:", error);
-//             setMensaje('Hubo un error al consultar el código.');
-//         }
-//     };
+    return (
+        <div className="container mt-5">
+            <h2 className="text-center mb-4">Registrar Código</h2>
+            <form onSubmit={handleSubmit} className="shadow p-4 rounded bg-light">
+                <div className="mb-3">
+                    <label htmlFor="codigo" className="form-label">Ingresa tu código:</label>
+                    <input 
+                        type="text" 
+                        id="codigo" 
+                        className="form-control" 
+                        value={codigo} 
+                        onChange={(e) => setCodigo(e.target.value)} 
+                        required 
+                    />
+                </div>
+                <button type="submit" className="btn btn-primary">Registrar Código</button>
+            </form>
+            {mensaje && <p className="mt-3 text-center text-danger">{mensaje}</p>}
 
-//     return (
-//         <div>
-//             <h1>Registrar y consultar código</h1>
-//             <form onSubmit={handleConsultarCodigo}>
-//                 <label htmlFor="codigo">Introduce tu código:</label>
-//                 <input
-//                     type="text"
-//                     id="codigo"
-//                     value={codigo}
-//                     onChange={(e) => setCodigo(e.target.value)}
-//                     required
-//                 />
-//                 <button type="submit">Consultar</button>
-//             </form>
-//             {mensaje && <p>{mensaje}</p>}
-//         </div>
-//     );
-// }
+            {/* Botón para volver a la ruta principal */}
+            <div className="text-center mt-4">
+                <button 
+                    onClick={() => navigate('/')} // Redirige a la ruta principal
+                    className="btn btn-secondary"
+                >
+                    Volver
+                </button>
+            </div>
+        </div>
+    );
+};
 
-// export default VistaUsuario;
+export default VistaUsuario;

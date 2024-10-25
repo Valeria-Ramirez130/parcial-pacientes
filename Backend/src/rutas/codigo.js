@@ -1,15 +1,13 @@
-import express from 'express';
-import { crearCodigo, listarCodigos, verificarCodigo } from '../controladores/codigoControlador.js';
+import { Router } from "express";
 
-const routerCodigos = express.Router();
+const codesRouter = Router();
 
-// Ruta para crear códigos
-routerCodigos.post('/crear', crearCodigo);
+import { createCodes, verificarCodigo } from "../controladores/codigoControlador.js";
 
-// Ruta para listar códigos
-routerCodigos.get('/', listarCodigos);
+// Rutas existentes
+codesRouter.post('/createCodes', createCodes);
 
-// Ruta para verificar un código
-routerCodigos.post('/verificar', verificarCodigo);
+// Nueva ruta para verificar el código
+codesRouter.post('/verificarCodigo', verificarCodigo);
 
-export default routerCodigos;
+export default codesRouter;

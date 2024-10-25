@@ -2,31 +2,44 @@ import express, { json } from 'express';
 import mongoose from 'mongoose';
 import { config } from 'dotenv';
 import cors from 'cors';
-import routerUsuarios from './rutas/usuario.js';
-import routerCodigos from './rutas/codigo.js';
+import routerUsuarios from './rutas/usuario.js'; // Asegúrate de que la ruta sea correcta
+import codesRouter from './rutas/codigo.js'; // Asegúrate de que la ruta sea correcta
 
+// Cargar las variables de entorno desde el archivo .env
 config();
+
 const app = express();
 
-app.use(cors());
-app.use(json()); // Esto debe estar antes de las rutas
+// Middleware
+app.use(cors()); // Habilitar CORS
+app.use(json()); // Parsear JSON antes de las rutas
 
 // Rutas de la API
-app.use('/api/usuario', routerUsuarios); // Esto debe contener las rutas para usuarios
-app.use('/api/codigos', routerCodigos); // Agrega las rutas para códigos
+app.use('/api/usuario', routerUsuarios); // Rutas para usuarios
+app.use('/api/codigos', codesRouter); // Rutas para códigos
 
+// Ruta de inicio
 app.get('/', (req, res) => {
-    res.end('Servidor prendido');
+    res.send('Servidor prendido');
 });
 
 // Conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
         console.log('Conectado a MongoDB');
     })
     .catch(err => console.error('No se pudo conectar a MongoDB', err));
 
+// Middleware para manejo de errores
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Algo salió mal!');
+});
+
+// Puerto del servidor
 const PORT = process.env.PORT || 5000;
+
+// Iniciar el servidor
 app.listen(PORT, () => {
     console.log(`El servidor está corriendo en el puerto ${PORT}`);
 });

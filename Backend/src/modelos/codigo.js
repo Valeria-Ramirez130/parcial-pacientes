@@ -1,10 +1,36 @@
-import { model, Schema } from 'mongoose';
+import mongoose from 'mongoose';
 
-const codigoSchema = new Schema({
-    codigo: { type: String, required: true, unique: true },
-    premio: { type: Number, required: true },
-    estado: { type: String, enum: ['libre', 'registrado'], default: 'libre' } // Estado del código
+// Esquema de Códigos
+const codigoSchema = new mongoose.Schema({
+    Codigo: {
+        type: String,
+        required: true,
+        unique: true,
+        maxlength: 4,
+    },
+    TienePremio: {
+        type: Boolean,
+        default: false,
+    },
+    Premio: {
+        type: String,
+        maxlength: 100, // Descripción del premio
+    },
+    Estado: {
+        type: String,
+        enum: ['libre', 'usado'], // Solo acepta estos dos estados
+        default: 'libre',
+    },
+    usuario: { // ID del usuario que lo usó (solo si está 'usado')
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'UserInfo', // Referencia al modelo del usuario
+    },
+    FechaUso: { // Fecha en que se usó el código
+        type: Date,
+    },
 });
 
-const Codigo = model('Codigo', codigoSchema);
+// Modelo de Código
+const Codigo = mongoose.model('Codigo', codigoSchema);
+
 export default Codigo;

@@ -83,6 +83,14 @@ function Login() {
                     >
                         {loading ? 'Iniciando...' : 'Iniciar Sesión'}
                     </button>
+                    {/* Botón de Registrarse */}
+                    <button
+                        type='button'
+                        onClick={() => navigate('/crearUsuario')}
+                        className='btn btn-secondary'
+                    >
+                        Registrarse
+                    </button>
                 </div>
             </form>
         </div>

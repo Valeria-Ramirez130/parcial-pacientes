@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Importar useNavigate
 import './CrearUsuario.css';
 import axios from 'axios';
 
@@ -12,6 +13,7 @@ function CrearUsuario() {
     const [contrasena, setContrasena] = useState('');
     const [rol, setRol] = useState('usuario'); // Estado para el rol
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate(); // Inicializar useNavigate
 
     const agregarUsuario = () => {
         // Validar que todos los campos estén llenos
@@ -190,6 +192,14 @@ function CrearUsuario() {
                 >
                     {loading ? 'Guardando...' : 'Guardar Usuario'}
                 </button>
+                {/* Botón de Registrarse */}
+                <button
+                        type='button'
+                        onClick={() => navigate('/')}
+                        className='btn btn-secondary'
+                    >
+                        Volver
+                    </button>
             </form>
         </div>
     );

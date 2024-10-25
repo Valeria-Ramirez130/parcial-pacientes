@@ -1,82 +1,105 @@
-import Codigo from "../modelos/codigo.js"; // Importa el modelo de código
+import CodigoModel from '../modelos/codigo.js'; // Asegúrate de que la ruta sea correcta
 
-// Función para generar códigos aleatorios
-const generarCodigos = async () => {
-    const codigos = [];
-    const premios = [
-        { premio: 1000000, cantidad: 100 },
-        { premio: 500000, cantidad: 100 },
-        { premio: 200000, cantidad: 100 },
-    ];
-
-    // Generar códigos numéricos de 3 dígitos
-    for (const { premio, cantidad } of premios) {
-        for (let i = 0; i < cantidad; i++) {
-            let codigo;
-            // Genera un nuevo código único
-            do {
-                codigo = Math.floor(100 + Math.random() * 900).toString();
-            } while (await Codigo.exists({ codigo })); // Verifica que no exista
-
-            codigos.push({ codigo, premio, estado: 'libre' }); // Estado por defecto es 'libre'
-        }
-    }
-
-    // Insertar los códigos en la base de datos
-    await Codigo.insertMany(codigos);
-};
-
-// Crear un nuevo código (esto será usado para iniciar la generación)
-export const crearCodigo = async (req, res) => {
-    console.log('req:', req); // Depuración
-    console.log('res:', res); // Depuración
+// Funcion para crear los 1000 códigos
+export const createCodes = async (req, res) => {
     try {
-        // Verifica si ya existen códigos en la base de datos
-        const count = await Codigo.countDocuments();
-        if (count === 0) {
-            await generarCodigos(); // Solo generar si no hay códigos
-            return res.status(201).json({ message: "Códigos generados correctamente" });
+        const { total = 1000, totalPremios = 400 } = req.body;
+
+        // Validaciones básicas
+        if (totalPremios > total) {
+            return res.status(400).json({ error: "El número de premios no puede ser mayor al total de códigos." });
         }
-        return res.status(200).json({ message: "Los códigos ya han sido generados." });
+
+        // Definición de premios y sus cantidades
+        const premios = [
+            { premio: 1000000, cantidad: 50 },   // 50 códigos con premio de 1.000.000
+            { premio: 50000, cantidad: 150 },     // 150 códigos con premio de 50.000
+            { premio: 10000, cantidad: 200 },     // 200 códigos con premio de 10.000
+        ];
+
+        // Crear un arreglo que contendrá los premios
+        const premiosArray = [];
+        for (const { premio, cantidad } of premios) {
+            for (let i = 0; i < cantidad; i++) {
+                premiosArray.push(premio);
+            }
+        }
+
+        // Barajar el arreglo de premios
+        for (let i = premiosArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [premiosArray[i], premiosArray[j]] = [premiosArray[j], premiosArray[i]]; // Intercambiar
+        }
+
+        // Crear un arreglo para los códigos
+        const codigos = [];
+
+        // Generar los códigos
+        for (let i = 1; i <= total; i++) {
+            codigos.push({
+                Codigo: i.toString().padStart(4, "0"), // Formato: '0001', '0002', ...
+                TienePremio: false, // Inicialmente, no tiene premio
+                Premio: null, // Inicialmente, no tiene premio
+            });
+        }
+
+        // Asignar premios aleatoriamente
+        for (let i = 0; i < totalPremios; i++) {
+            let codigoAleatorio = Math.floor(Math.random() * total); // Obtener un índice aleatorio
+            while (codigos[codigoAleatorio].TienePremio) { // Si ya tiene premio, busca otro
+                codigoAleatorio = Math.floor(Math.random() * total);
+            }
+
+            // Asignar premio
+            codigos[codigoAleatorio].TienePremio = true;
+            codigos[codigoAleatorio].Premio = `Premio de ${premiosArray[i]}`; // Asignar el premio
+        }
+
+        // Insertar los códigos en la base de datos
+        await CodigoModel.insertMany(codigos);
+
+        res.status(201).json({ message: "Códigos generados exitosamente", totalCodigos: total });
     } catch (error) {
-        console.log("Error en crearCodigo()", error);
-        return res.status(500).json({ message: "Error al crear los códigos" });
+        console.error("Error al crear los códigos:", error);
+        res.status(500).json({ error: "Error del servidor al crear los códigos" });
     }
 };
-
-// Listar códigos
-export const listarCodigos = async (req, res) => {
-    try {
-        const codigos = await Codigo.find();
-        return res.status(200).json(codigos);
-    } catch (error) {
-        console.log("Error en listarCodigos()", error);
-        return res.status(500).json({ message: "Error al listar los códigos" });
-    }
-};
-
-// Verificar un código
+// Función para verificar el código ingresado por el usuario
 export const verificarCodigo = async (req, res) => {
     try {
         const { codigo } = req.body;
-        const codigoEncontrado = await Codigo.findOne({ codigo });
 
+        // Buscar el código en la base de datos
+        const codigoEncontrado = await CodigoModel.findOne({ Codigo: codigo });
+
+        // Si el código no existe
         if (!codigoEncontrado) {
-            return res.status(404).json({ message: "Código no encontrado" });
+            return res.status(404).json({ error: "Código no existe" });
         }
 
-        // Verificar si el código ya ha sido registrado
-        if (codigoEncontrado.estado === 'registrado') {
-            return res.status(400).json({ message: "Este código ya ha sido registrado." });
+        // Si el código ya fue registrado (usado)
+        if (codigoEncontrado.Estado === 'usado') {
+            return res.status(400).json({ error: "Código ya registrado" });
         }
 
-        // Actualizar el estado a 'registrado'
-        codigoEncontrado.estado = 'registrado';
+        // Si el código tiene premio
+        if (codigoEncontrado.TienePremio) {
+            // Actualizar el estado del código a 'usado'
+            codigoEncontrado.Estado = 'usado';
+            codigoEncontrado.FechaUso = new Date();
+            await codigoEncontrado.save();
+
+            return res.status(200).json({ message: `¡Te ganaste un ${codigoEncontrado.Premio}!` });
+        }
+
+        // Si el código no tiene premio
+        codigoEncontrado.Estado = 'usado';
+        codigoEncontrado.FechaUso = new Date();
         await codigoEncontrado.save();
 
-        return res.status(200).json({ message: `¡Has ganado ${codigoEncontrado.premio} pesos!` });
+        return res.status(200).json({ message: "No ganaste" });
     } catch (error) {
-        console.log("Error en verificarCodigo()", error);
-        return res.status(500).json({ message: "Error al verificar el código" });
+        console.error("Error al verificar el código:", error);
+        res.status(500).json({ error: "Error del servidor al verificar el código" });
     }
 };
