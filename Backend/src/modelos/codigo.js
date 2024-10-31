@@ -18,9 +18,10 @@ const codigoSchema = new mongoose.Schema({
     },
     Estado: {
         type: String,
-        enum: ['libre', 'usado'], // Solo acepta estos dos estados
+        enum: ['libre', 'usado', 'disponible'], // Agregar 'disponible' aquí
         default: 'libre',
     },
+
     User: { // ID del usuario que lo usó (solo si está 'usado')
         type: mongoose.Schema.Types.ObjectId,
         ref: 'informacionUser', // Referencia al modelo de usuario

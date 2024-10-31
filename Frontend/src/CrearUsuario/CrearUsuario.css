@@ -62,17 +62,36 @@ h2 {
     /* Asegura que la navbar esté encima de otros elementos */
 }
 
-/* Centrar el botón en el formulario */
-.btn-success {
-    display: block;
-    /* Hacer que el botón se comporte como un bloque */
-    margin: 20px auto 0;
-    /* Margen automático a los lados para centrar */
-    width: auto;
-    /* Ancho automático */
-    max-width: 200px;
-    /* Ancho máximo del botón */
+
+
+/* Estilos para los botones alineados */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 20px;
+    /* Espaciado superior para separar los botones del formulario */
 }
+
+.button-group .btn {
+    width: 20%;
+    /* Ancho del botón para ocupen el mismo espacio */
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+    .button-group {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .button-group .btn {
+        width: 100%;
+        margin-bottom: 10px;
+        /* Espacio entre botones en móviles */
+    }
+}
+
 
 /* Espaciado adicional para el contenedor en dispositivos móviles */
 @media (max-width: 768px) {
