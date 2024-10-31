@@ -1,6 +1,6 @@
-import CodigoModel from '../modelos/codigo.js'; // Asegúrate de que la ruta sea correcta
+import CodigoModel from '../modelos/codigo.js';
 
-// Funcion para crear los 1000 códigos
+// Función para crear los 1000 códigos
 export const createCodes = async (req, res) => {
     try {
         const { total = 1000, totalPremios = 400 } = req.body;
@@ -10,14 +10,12 @@ export const createCodes = async (req, res) => {
             return res.status(400).json({ error: "El número de premios no puede ser mayor al total de códigos." });
         }
 
-        // Definición de premios y sus cantidades
         const premios = [
-            { premio: 1000000, cantidad: 50 },   // 50 códigos con premio de 1.000.000
-            { premio: 50000, cantidad: 150 },     // 150 códigos con premio de 50.000
-            { premio: 10000, cantidad: 200 },     // 200 códigos con premio de 10.000
+            { premio: 1000000, cantidad: 50 },
+            { premio: 50000, cantidad: 150 },
+            { premio: 10000, cantidad: 200 },
         ];
 
-        // Crear un arreglo que contendrá los premios
         const premiosArray = [];
         for (const { premio, cantidad } of premios) {
             for (let i = 0; i < cantidad; i++) {
@@ -28,31 +26,30 @@ export const createCodes = async (req, res) => {
         // Barajar el arreglo de premios
         for (let i = premiosArray.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [premiosArray[i], premiosArray[j]] = [premiosArray[j], premiosArray[i]]; // Intercambiar
+            [premiosArray[i], premiosArray[j]] = [premiosArray[j], premiosArray[i]];
         }
 
-        // Crear un arreglo para los códigos
         const codigos = [];
 
         // Generar los códigos
         for (let i = 1; i <= total; i++) {
             codigos.push({
-                Codigo: i.toString().padStart(4, "0"), // Formato: '0001', '0002', ...
-                TienePremio: false, // Inicialmente, no tiene premio
-                Premio: null, // Inicialmente, no tiene premio
+                Codigo: i.toString().padStart(4, "0"),
+                TienePremio: false,
+                Premio: null,
+                Estado: 'disponible', // Asegúrate de agregar el estado disponible
             });
         }
 
         // Asignar premios aleatoriamente
         for (let i = 0; i < totalPremios; i++) {
-            let codigoAleatorio = Math.floor(Math.random() * total); // Obtener un índice aleatorio
-            while (codigos[codigoAleatorio].TienePremio) { // Si ya tiene premio, busca otro
+            let codigoAleatorio = Math.floor(Math.random() * total);
+            while (codigos[codigoAleatorio].TienePremio) {
                 codigoAleatorio = Math.floor(Math.random() * total);
             }
 
-            // Asignar premio
             codigos[codigoAleatorio].TienePremio = true;
-            codigos[codigoAleatorio].Premio = `Premio de ${premiosArray[i]}`; // Asignar el premio
+            codigos[codigoAleatorio].Premio = `Premio de ${premiosArray[i]}`;
         }
 
         // Insertar los códigos en la base de datos
@@ -64,42 +61,55 @@ export const createCodes = async (req, res) => {
         res.status(500).json({ error: "Error del servidor al crear los códigos" });
     }
 };
+
 // Función para verificar el código ingresado por el usuario
 export const verificarCodigo = async (req, res) => {
     try {
-        const { codigo } = req.body;
+        const { codigo, userId } = req.body;
 
-        // Buscar el código en la base de datos
+        // Verifica que se reciban ambos valores
+        if (!codigo || !userId) {
+            return res.status(400).json({ error: "Código o ID de usuario no proporcionados." });
+        }
+
         const codigoEncontrado = await CodigoModel.findOne({ Codigo: codigo });
 
-        // Si el código no existe
         if (!codigoEncontrado) {
-            return res.status(404).json({ error: "Código no existe" });
+            return res.status(404).json({ error: "Código no existe." });
         }
 
-        // Si el código ya fue registrado (usado)
         if (codigoEncontrado.Estado === 'usado') {
-            return res.status(400).json({ error: "Código ya registrado" });
+            return res.status(400).json({ error: "Código ya registrado." });
         }
 
-        // Si el código tiene premio
-        if (codigoEncontrado.TienePremio) {
-            // Actualizar el estado del código a 'usado'
-            codigoEncontrado.Estado = 'usado';
-            codigoEncontrado.FechaUso = new Date();
-            await codigoEncontrado.save();
+        // Actualiza el estado y asigna el usuario
+        codigoEncontrado.Estado = 'usado';
+        codigoEncontrado.FechaUso = new Date();
+        codigoEncontrado.User = userId; // Asignar el ID del usuario al campo User
 
+        await codigoEncontrado.save();
+
+        if (codigoEncontrado.TienePremio) {
             return res.status(200).json({ message: `¡Te ganaste un ${codigoEncontrado.Premio}!` });
         }
 
-        // Si el código no tiene premio
-        codigoEncontrado.Estado = 'usado';
-        codigoEncontrado.FechaUso = new Date();
-        await codigoEncontrado.save();
-
-        return res.status(200).json({ message: "No ganaste" });
+        return res.status(200).json({ message: "No ganaste." });
     } catch (error) {
         console.error("Error al verificar el código:", error);
-        res.status(500).json({ error: "Error del servidor al verificar el código" });
+        res.status(500).json({ error: "Error del servidor al verificar el código." });
+    }
+};
+
+// Función para obtener códigos del usuario
+export const obtenerCodigosUsuario = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const codigosUsuario = await CodigoModel.find({ User: userId, Estado: 'usado' });
+
+        return res.status(200).json(codigosUsuario);
+    } catch (error) {
+        console.error("Error al obtener códigos del usuario:", error);
+        res.status(500).json({ error: "Error del servidor al obtener los códigos del usuario" });
     }
 };

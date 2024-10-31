@@ -21,9 +21,9 @@ const codigoSchema = new mongoose.Schema({
         enum: ['libre', 'usado'], // Solo acepta estos dos estados
         default: 'libre',
     },
-    usuario: { // ID del usuario que lo usó (solo si está 'usado')
+    User: { // ID del usuario que lo usó (solo si está 'usado')
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'UserInfo', // Referencia al modelo del usuario
+        ref: 'informacionUser', // Referencia al modelo de usuario
     },
     FechaUso: { // Fecha en que se usó el código
         type: Date,
