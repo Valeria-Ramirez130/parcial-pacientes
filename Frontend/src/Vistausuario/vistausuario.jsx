@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Asegúrate de importar Bootstrap
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from 'react-router-dom'; // Importa useNavigate
 
 const VistaUsuario = () => {
     const [codigo, setCodigo] = useState('');
     const [userId, setUserId] = useState(null);
     const [mensaje, setMensaje] = useState('');
     const [codigosRegistrados, setCodigosRegistrados] = useState([]);
+    const navigate = useNavigate(); // Inicializa useNavigate
 
     useEffect(() => {
-        // Obtén el ID del usuario del almacenamiento local o contexto de tu aplicación
-        const id = localStorage.getItem('userId'); // O usa el método que estés usando para obtener el userId
+        const id = localStorage.getItem('userId');
         if (id) {
             setUserId(id);
             obtenerCodigos(id);
@@ -35,20 +36,15 @@ const VistaUsuario = () => {
             return;
         }
 
-        // Verifica que el código no esté vacío
         if (!codigo.trim()) {
             setMensaje('Por favor, ingresa un código válido.');
             return;
         }
 
-        console.log("Código:", codigo);
-        console.log("User ID:", userId); // Para verificar los valores
-
         try {
             const response = await axios.post('/api/codigos/verificarCodigo', { codigo, userId });
             setMensaje(response.data.message);
-            // Actualiza la lista de códigos registrados después de verificar uno nuevo
-            await obtenerCodigos(userId); // Reutiliza la función para obtener códigos
+            await obtenerCodigos(userId);
         } catch (error) {
             if (error.response && error.response.data) {
                 setMensaje(error.response.data.error);
@@ -75,13 +71,25 @@ const VistaUsuario = () => {
             </form>
             {mensaje && <p className="text-danger">{mensaje}</p>}
             <h2 className="mt-4">Códigos Registrados</h2>
-            <ul className="list-group">
-                {codigosRegistrados.map((codigo) => (
-                    <li key={codigo._id} className="list-group-item">
-                        {codigo.Codigo} - {codigo.Estado}
-                    </li>
-                ))}
-            </ul>
+            <table className="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Fecha de Uso</th>
+                        <th scope="col">Premio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {codigosRegistrados.map((codigo) => (
+                        <tr key={codigo._id}>
+                            <td>{codigo.Codigo}</td>
+                            <td>{codigo.FechaUso ? new Date(codigo.FechaUso).toLocaleString() : 'No utilizado'}</td>
+                            <td>{codigo.TienePremio ? codigo.Premio : 'No ganaste'}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <button onClick={() => navigate('/')} className="btn btn-secondary mt-4">Volver</button>
         </div>
     );
 };
